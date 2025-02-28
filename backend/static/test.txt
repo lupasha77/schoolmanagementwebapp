@@ -1,0 +1,17 @@
+wififeibsjksvdjk dv n  xn  khdihlsvsvc nm xzcn xzbhlbczc  x zcm xhc xznx zchjnx blizzxc,  ,
+
+  # def send_verification_email(self, user_data):
+    #     """Generates a new verification token and sends an email."""
+    #     try:
+    #         verification_token = self.generate_verification_token()
+    #         update_result = self.db.users.update_one(
+    #             {"_id": user_data['_id']}, {"$set": {"verification_token": verification_token}}
+    #         )
+            
+    #         if update_result.modified_count == 0:
+    #             raise Exception("Failed to update verification token")
+            
+    #         self.email_service.send_verification_email(user_data['user_email'], verification_token)
+    #     except Exception as e:
+    #         logger.error(f"Error sending verification email: {e}")
+    #         raise

@@ -1,0 +1,84 @@
+/* Reset some default styles */
+body, html {
+  margin: 0;
+  padding: 0;
+  padding: 0;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+}
+
+
+/* Ensure the body is scrollable by default */
+body {
+  overflow-y: auto;
+}
+
+/* Modal specific styles */
+.mantine-Modal-root {
+  position: fixed;
+  inset: 0;
+  z-index: 1000; /* Ensure modals are above other content */
+}
+
+.mantine-Modal-inner {
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+}
+
+.mantine-Modal-content {
+  position: relative;
+  margin-top: 10vh;
+  max-width: 500px;
+  width: 100%;
+  z-index: 1001; /* Ensure modal content is above the overlay */
+}
+
+.mantine-Modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.55);
+  z-index: 999; /* Ensure overlay is below the modal content */
+}
+
+/* Prevent body scrolling when modal is open */
+body.mantine-Modal-opened {
+  overflow: hidden;
+}
+
+/* Ensure buttons and interactive elements are clickable */
+button, a, [role="button"] {
+  cursor: pointer;
+  pointer-events: auto; /* Ensure pointer events are enabled */
+}
+
+/* Debugging: Add a border to all elements to visualize layout */
+/* * {
+  border: 1px solid red;
+} */
+ /* Add these styles to your CSS file */
+.mantine-Drawer-root {
+  position: fixed;
+  z-index: 1001;
+}
+
+.mantine-Drawer-overlay {
+  z-index: 1000;
+}
+
+.mantine-Drawer-content {
+  z-index: 1001;
+}
+
+/* Ensure other elements don't have higher z-index */
+.mantine-Header-root,
+.mantine-Navbar-root,
+.mantine-AppShell-main {
+  z-index: 1;
+}
+
+/* Only prevent scroll on modal open if needed */
+body.mantine-Drawer-opened {
+  overflow: auto !important;
+}
