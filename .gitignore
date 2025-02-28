@@ -1,4 +1,7 @@
 backend/venv/
+<<<<<<< HEAD
 backend/.env
 backend/.env
 *.pyc
+=======
+>>>>>>> d2ffc1e6 (Removed venv from Git tracking)
