@@ -1,5 +1,5 @@
 from flask import Blueprint,jsonify, request, current_app
-from backend.app.models.school_class_model import Department, GradeLevel, Specialty, Subject, SubjectNames
+from app.models.school_class_model import Department, GradeLevel, Specialty, Subject, SubjectNames
 import logging
 
 # Set up logging if not already configured

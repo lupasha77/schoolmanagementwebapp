@@ -3,7 +3,7 @@
 from flask_pymongo import PyMongo
 from bson import ObjectId
 from flask import Blueprint, jsonify, request, current_app
-from backend.app.services.staff_service import StaffService
+from app.services.staff_service import StaffService
 from ..middleware.validation import validate_request
 from ..models.schemas import Staff, Subject 
 from ..utils.db_utils import serialize_mongo_doc

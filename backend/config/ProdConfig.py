@@ -67,29 +67,4 @@ def configure_upload_folder(app):
     app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB
 
 
- 
-
-# Directory Structure
-"""
-backend/
-├── app/
-│   ├── __init__.py
-│   ├── config.py
-│   ├── routes/
-│   │   ├── __init__.py
-│   │   ├── timetable_routes.py
-│   │   ├── class_routes.py
-│   │   └── teacher_routes.py
-│   ├── models/
-│   │   ├── __init__.py
-│   │   └── schemas.py
-│   ├── services/
-│   │   ├── __init__.py
-│   │   ├── timetable_service.py
-│   │   └── scheduling_service.py
-│   └── utils/
-│       ├── __init__.py
-│       └── time_utils.py
-└── run.py
-"""
-
+  

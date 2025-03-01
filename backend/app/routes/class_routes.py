@@ -3,9 +3,9 @@ from datetime import datetime
 from bson import ObjectId
 from flask import Blueprint, current_app, jsonify, request
 
-from backend.app.middleware.school_validator import SchoolValidator, ValidationError
-from backend.app.services.timetable_service import TimetableService
-from backend.config.timetable_config import TimetableConfig
+from app.middleware.school_validator import SchoolValidator, ValidationError
+from app.services.timetable_service import TimetableService
+from config.timetable_config import TimetableConfig
 from ..services.class_service import ClassService
 from ..middleware.validation import validate_request
 from ..models.schemas import Class, Stream

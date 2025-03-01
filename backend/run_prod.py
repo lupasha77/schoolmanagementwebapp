@@ -1,7 +1,7 @@
 import os
 os.environ['FLASK_ENV'] = 'production'
 
-from backend.app import create_app
+from app import create_app
 
 app = create_app()
 

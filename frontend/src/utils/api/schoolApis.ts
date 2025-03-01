@@ -4,7 +4,7 @@ import api from './axios';
 
 // Define the response types
 interface SubjectDataResponse {
-  departments: string[];
+  department: string[];
   gradeLevels: string[];
   subjects: Subject[];
 }
@@ -94,7 +94,7 @@ const schoolApis = {
 
       // Transform the data if needed
       const transformedData = {
-        departments: response.data.departments || [],
+        departments: response.data.department || [],
         gradeLevels: response.data.gradeLevels || [],
         subjects: response.data.subjects.map(subject => ({
           ...subject,
@@ -117,7 +117,7 @@ const schoolApis = {
   },
 
   async getDepartmentName() {
-    const response = await api.get<{ departments: string[] }>('/subjects/get-department-name');
+    const response = await api.get<{ department: string[] }>('/subjects/get-department-name');
     return response.data;
   },
   

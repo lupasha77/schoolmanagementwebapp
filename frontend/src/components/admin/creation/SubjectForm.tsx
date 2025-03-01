@@ -1,25 +1,61 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { TextInput, Switch, NumberInput, Select, Button, Stack, Alert } from '@mantine/core';
 import schoolApis from '../../../utils/api/schoolApis';
 import { GradeLevel, Specialty } from '../../../types/school_types';
 
-// Fetch Subjects from API instead of using static list
+// Type for Select item format
+interface SelectItem {
+  value: string;
+  label: string;
+}
+
+// Fetch Subjects from API
 const fetchSubjectNames = async () => {
   try {
-    const response = await schoolApis.getSubjectNames();
-    // console.log("Available Subject Names:", response.subjects);
-    return response.subjects.map(subject => subject.name);
+    const response = await schoolApis.getSubjectNames(); 
+    // Ensure we have the correct data structure
+    if (response.subjects && Array.isArray(response.subjects)) {
+      const formattedSubjects = response.subjects.map(subject => {
+        // Make sure we handle both string and object formats
+        const name = typeof subject === 'string' ? subject : subject.name;
+        return {
+          value: name,
+          label: name
+        };
+      }); 
+      return formattedSubjects;
+    }
+    return [];
   } catch (error) {
     console.error("Error fetching subject names:", error);
     return [];
   }
 };
 
-const fetchDepartmentName = async () => {
+// Fetch Departments from API
+const fetchDepartmentNames = async () => {
   try {
-    const response = await schoolApis.getDepartmentName();
-    // console.log("Available Department Names:", response.department);
-    return response.departments || []; // Return an empty array if no department names;
+    const response = await schoolApis.getDepartmentName(); 
+      
+    if (response && response.department && Array.isArray(response.department)) {
+      // Convert strings to objects with value and label properties
+      const formattedDepartments = response.department.map(dept => {
+        if (typeof dept !== 'string') {
+          console.error("Unexpected department format:", dept);
+          return { value: String(dept), label: String(dept) };
+        }
+        
+        return {
+          value: dept,
+          label: dept.charAt(0).toUpperCase() + dept.slice(1)
+        };
+      });
+       
+      return formattedDepartments;
+    }
+    
+    console.error("Unexpected API response format:", response);
+    return []; // Return empty array as fallback
   } catch (error) {
     console.error("Error fetching department names:", error);
     return [];
@@ -28,8 +64,9 @@ const fetchDepartmentName = async () => {
 
 export function SubjectForm() {
   const [loading, setLoading] = useState(false);
-  const [subjects, setSubjects] = useState<string[]>([]);
-  const [department, setDepartment] = useState<string[]>([]);
+  const [subjects, setSubjects] = useState<SelectItem[]>([]);
+  const [departments, setDepartments] = useState<SelectItem[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -44,15 +81,90 @@ export function SubjectForm() {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
+  // Define static data with explicit value/label structure
+  const gradeLevelOptions: SelectItem[] = [
+    { value: 'Form 1', label: 'Form 1' },
+    { value: 'Form 2', label: 'Form 2' },
+    { value: 'Form 3', label: 'Form 3' },
+    { value: 'Form 4', label: 'Form 4' },
+    { value: 'Form 5', label: 'Form 5' },
+    { value: 'Form 6', label: 'Form 6' }
+  ];
+  
+  const specialtyOptions: SelectItem[] = [
+    { value: 'Arts', label: 'Arts' },
+    { value: 'Sciences', label: 'Sciences' },
+    { value: 'Commercial', label: 'Commercial' },
+    { value: 'Humanities', label: 'Humanities' }
+  ];
+
+  // Manually define fallback data
+  const fallbackDepartments = useMemo(() => [
+    { value: 'arts', label: 'Arts' },
+    { value: 'sciences', label: 'Sciences' },
+    { value: 'commercial', label: 'Commercial' },
+    { value: 'humanities', label: 'Humanities' },
+    { value: 'mathematics', label: 'Mathematics' },
+    { value: 'linguistics', label: 'Linguistics' },
+    { value: 'geography', label: 'Geography' },
+    { value: 'social sciences', label: 'Social Sciences' },
+    { value: 'practicals', label: 'Practicals' },
+    { value: 'ICT', label: 'ICT' }
+  ], []);
+
+  const fallbackSubjects=useMemo(() => [
+    { value: 'Mathematics', label: 'Mathematics' },
+    { value: 'English', label: 'English' },
+    { value: 'Physics', label: 'Physics' },
+    { value: 'Chemistry', label: 'Chemistry' },
+    { value: 'Biology', label: 'Biology' }
+  ],[]);
+
   useEffect(() => {
-    fetchSubjectNames().then(setSubjects);
-    fetchDepartmentName().then(setDepartment);
-  }, []);
+    let isMounted = true;
+    
+    const loadData = async () => {
+      setDataLoading(true);
+      
+      // Set fallback data immediately to ensure something is available
+      setSubjects(fallbackSubjects);
+      setDepartments(fallbackDepartments);
+      
+      try {
+        // Try to load subjects
+        const subjectsData = await fetchSubjectNames();
+        if (isMounted && subjectsData && subjectsData.length > 0) {
+          setSubjects(subjectsData);
+        }
+        
+        // Try to load departments
+        const departmentsData = await fetchDepartmentNames();
+        if (isMounted && departmentsData && departmentsData.length > 0) {
+          setDepartments(departmentsData);
+        }
+      } catch (error) {
+        console.error("Error loading form data:", error);
+        if (isMounted) {
+          setErrorMessage("Failed to load some data. Using fallback options.");
+        }
+      } finally {
+        if (isMounted) {
+          setDataLoading(false);
+        }
+      }
+    };
+    
+    loadData();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [fallbackDepartments, fallbackSubjects]);
 
   const handleSubmit = async () => {
     setLoading(true);
-    setErrorMessage(''); // Reset error message
-    setSuccessMessage(''); // Reset success message
+    setErrorMessage(''); 
+    setSuccessMessage(''); 
     
     try {
       const payload = {
@@ -60,18 +172,13 @@ export function SubjectForm() {
         specialty: ["Form 5", "Form 6"].includes(formData.gradeLevel)
           ? (formData.specialty as Specialty)
           : undefined,
-          isCore: false, // or true, depending on your requirements
-          isPractical: formData.requiresPracticals,
+        isCore: false,
+        isPractical: formData.requiresPracticals,
       };
-  
-      // Log payload before sending to the API
-    //   console.log('Payload:', payload);
-  
+   
       await schoolApis.createSubject(payload);
       
-      // Show success message if subject is created successfully
       setSuccessMessage('Subject created successfully!');
-      // Reset form after successful creation
       setFormData({
         name: '',
         code: '',
@@ -90,7 +197,7 @@ export function SubjectForm() {
   };
   
   return (
-    <Stack>
+    <Stack gap="md">
       {errorMessage && (
         <Alert color="red" onClose={() => setErrorMessage('')} title="Error">
           {errorMessage}
@@ -102,54 +209,71 @@ export function SubjectForm() {
         </Alert>
       )}
 
-      <Select
-        label="Subject Name"
-        value={formData.name}
-        onChange={(value) => setFormData({ ...formData, name: value || '' })}
-        data={subjects}
-      />
-      <TextInput
-        label="Subject Code"
-        value={formData.code}
-        onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-      />
-      <Select
-        label="Department"
-        value={formData.department}
-        onChange={(value) => setFormData({ ...formData, department: value || '' })}
-        data={department}
-      />
-      <Select
-        label="Grade Level"
-        value={formData.gradeLevel}
-        onChange={(value) => setFormData({ ...formData, gradeLevel: value as GradeLevel })}
-        data={["Form 1", "Form 2", "Form 3", "Form 4", "Form 5", "Form 6"]}
-      />
-      {["Form 5", "Form 6"].includes(formData.gradeLevel) && (
-        <Select
-          label="Specialty"
-          value={formData.specialty}
-          onChange={(value) => setFormData({ ...formData, specialty: value as Specialty || '' })}
-          data={["Arts", "Sciences", "Commercial", "Humanities"]}
-          clearable
-        />
+      {dataLoading ? (
+        <Alert color="blue" title="Loading">
+          Loading form data...
+        </Alert>
+      ) : (
+        <>
+          <Select
+            label="Subject Name"
+            value={formData.name}
+            onChange={(value) => setFormData({ ...formData, name: value || '' })}
+            data={subjects}
+            placeholder="Select a subject"
+            searchable
+            // nothingFound="No subjects found"
+          />
+          <TextInput
+            label="Subject Code"
+            value={formData.code}
+            onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+            placeholder="Enter subject code"
+          />
+          <Select
+            label="Department"
+            value={formData.department}
+            onChange={(value) => setFormData({ ...formData, department: value || '' })}
+            data={departments}
+            placeholder="Select a department"
+            searchable
+            // nothingFound="No departments found"
+          />
+          <Select
+            label="Grade Level"
+            value={formData.gradeLevel}
+            onChange={(value) => setFormData({ ...formData, gradeLevel: value as GradeLevel })}
+            data={gradeLevelOptions}
+            placeholder="Select grade level"
+          />
+          {["Form 5", "Form 6"].includes(formData.gradeLevel) && (
+            <Select
+              label="Specialty"
+              value={formData.specialty}
+              onChange={(value) => setFormData({ ...formData, specialty: value as Specialty || '' })}
+              data={specialtyOptions}
+              placeholder="Select specialty"
+              clearable
+            />
+          )}
+          <Switch
+            label="Requires Practicals"
+            checked={formData.requiresPracticals}
+            onChange={(e) => setFormData({ ...formData, requiresPracticals: e.currentTarget.checked })}
+          />
+          {formData.requiresPracticals && (
+            <NumberInput
+              label="Practical Duration (minutes)"
+              value={formData.practical_duration}
+              onChange={(value) => setFormData({ ...formData, practical_duration: Number(value) || 0 })}
+              min={0}
+            />
+          )}
+          <Button onClick={handleSubmit} loading={loading}>
+            Create Subject
+          </Button>
+        </>
       )}
-      <Switch
-        label="Requires Practicals"
-        checked={formData.requiresPracticals}
-        onChange={(e) => setFormData({ ...formData, requiresPracticals: e.currentTarget.checked })}
-      />
-      {formData.requiresPracticals && (
-        <NumberInput
-          label="Practical Duration (minutes)"
-          value={formData.practical_duration}
-          onChange={(value) => setFormData({ ...formData, practical_duration: Number(value) || 0 })}
-          min={0}
-        />
-      )}
-      <Button onClick={handleSubmit} loading={loading}>
-        Create Subject
-      </Button>
     </Stack>
   );
 }

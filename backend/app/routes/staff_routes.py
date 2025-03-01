@@ -6,7 +6,7 @@ from ..models.schemas import Staff, Subject
 from ..utils.db_utils import serialize_mongo_doc
 from bson import ObjectId
 from datetime import datetime
-from backend.app.models.school_class_model import GradeLevel, Specialty, Subject
+from app.models.school_class_model import GradeLevel, Specialty, Subject
 from app.services.timetable_service import TimetableService
 from app.models.department_config import DEPARTMENT_CONFIG
 from app.models.school_class_model import Department, Specialty

@@ -18,9 +18,14 @@ import { UserProfile } from './components/profile/UserProfile';
 import FakeDataGeneratorPage from './pages/FakeDataGenerator';
 import { TimetableViews } from './components/ConsolidatedTimeTables';
 
+// Determine the base URL dynamically
+const baseUrl = import.meta.env.MODE === 'production' 
+  ? '/schoolmanagementwebapp/' 
+  : '/';
+
 const AppRoutes: React.FC = () => {
   return (
-    <Router>
+    <Router  basename={baseUrl}>
       <Layout>
         <Routes>
           <Route path="/" element={<HomePage />}/>

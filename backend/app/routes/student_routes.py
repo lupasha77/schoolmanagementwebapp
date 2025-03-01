@@ -6,7 +6,7 @@ from ..models.school_class_model import Student, Subject
 from ..utils.db_utils import serialize_mongo_doc
 from bson import ObjectId
 from datetime import datetime
-from backend.app.models.school_class_model import GradeLevel, Specialty, Subject
+from app.models.school_class_model import GradeLevel, Specialty, Subject
 
 student_bp = Blueprint('student', __name__)
 

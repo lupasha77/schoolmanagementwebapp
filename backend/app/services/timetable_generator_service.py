@@ -9,7 +9,7 @@ from flask import current_app
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from backend.app.services.timeslots_service import PeriodService
+from app.services.timeslots_service import PeriodService
 from config.timetable_config import TimetableConfig, GradeLevel, Department, SubjectNames 
 import logging
 from typing import Dict, List
