@@ -1,25 +1,37 @@
-# backend/config/config.py
-from dotenv import load_dotenv
+# config/ProdConfig.py
 import os
-from flask import send_from_directory
 from pathlib import Path
-# Load environment variables from .env file
-load_dotenv()
+from config.DevConfig import Config as DevConfig
 
-class Config:
-    MONGO_URI = os.getenv('MONGO_URI')
-    JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY')
-    JWT_REFRESH_SECRET_KEY = os.getenv('JWT_REFRESH_SECRET_KEY')
-    MAIL_SERVER = os.getenv('MAIL_SERVER', 'localhost')
-    MAIL_PORT = int(os.getenv('MAIL_PORT', 1025))
-    MAIL_USERNAME = os.getenv('MAIL_USERNAME')
-    MAIL_PASSWORD = os.getenv('MAIL_PASSWORD')
-    MAIL_DEFAULT_SENDER = os.getenv('MAIL_DEFAULT_SENDER', 'no-reply@hwangehighschool.org')
-    JWT_ACCESS_TOKEN_EXPIRES = 60 * 15  # 15 minutes
-    JWT_REFRESH_TOKEN_EXPIRES = 60 * 60 * 24 * 30  # 30 days
-    FRONTEND_URL = os.getenv('FRONTEND_URL')
+class Config(DevConfig):
+    """Production configuration."""
+    DEBUG = False
+    TESTING = False
+    # Use production MongoDB URI
+    MONGO_URI = os.environ.get('MONGO_URI')
+    # Use different JWT keys for production
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
+    JWT_REFRESH_SECRET_KEY = os.environ.get('JWT_REFRESH_SECRET_KEY')
+    
+    # Production mail settings
+    MAIL_SERVER = os.environ.get('MAIL_SERVER')
+    MAIL_PORT = int(os.environ.get('MAIL_PORT', 587))
+    MAIL_USE_TLS = True
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
+    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER')
+    
+    # Production frontend URL
+    FRONTEND_URL = os.environ.get('FRONTEND_URL')
 
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
+def configure_upload_folder(app):
+    """Configure the upload folder for the production application"""
+    upload_folder = os.environ.get('UPLOAD_FOLDER', os.path.join(os.path.dirname(os.path.dirname(__file__)), 'uploads'))
+    if not os.path.exists(upload_folder):
+        os.makedirs(upload_folder)
+    app.config['UPLOAD_FOLDER'] = upload_folder
+
     
    
 def configure_upload_folder(app):

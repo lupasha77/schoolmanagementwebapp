@@ -1,69 +1,132 @@
 import logging
 import os
-import sys 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from config.config import Config
 from flask import Flask
 from flask_cors import CORS
 from flask_mail import Mail
 from pymongo import MongoClient
 from dotenv import load_dotenv
-# from flask_limiter import Limiter
-# from flask_limiter.util import get_remote_address
-from config.config import configure_upload_folder  # Import the function
-# Load environment variables
-load_dotenv()
+from time import sleep
 
- 
+# Constants
+MAX_RETRIES = 3
+RETRY_DELAY = 5  # seconds
+
 # Initialize Flask extensions
 mail = Mail()
 mongodb_client = None
 db = None
 
+# Configure logger
+logger = logging.getLogger('auth_service')
+
+def load_env_file():
+    """Load the appropriate .env file based on FLASK_ENV"""
+    env = os.environ.get('FLASK_ENV', 'development')
+    env_file = f".env.{env}"
+    
+    # Check if the environment-specific file exists
+    if os.path.exists(env_file):
+        logger.info(f"Loading environment from {env_file}")
+        load_dotenv(env_file)
+    else:
+        # Fallback to default .env file
+        logger.warning(f"{env_file} not found, falling back to .env")
+        load_dotenv()
+    
+    return env
+
 def create_app():
+    # Load environment variables based on FLASK_ENV
+    env = load_env_file()
+    
     app = Flask(__name__)
-    app.config.from_object(Config)
+    
+    # Configure app based on environment
+    if env == 'production':
+        from config.ProdConfig import configure_upload_folder
+        app.config.from_object('config.ProdConfig')
+    else:
+        from config.DevConfig import configure_upload_folder
+        app.config.from_object('config.DevConfig')
 
     # Configure the upload folder
-    configure_upload_folder(app)  # Call the function to configure uploads
+    configure_upload_folder(app)
 
     # Configure logging
-    logging.basicConfig(level=logging.INFO)
-    logger = logging.getLogger('auth_service')
-    handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    ))
-    logger.addHandler(handler)
+    setup_logging(app)
+
     # Initialize MongoDB
-    try:
-        global mongodb_client, db
-        mongodb_client = MongoClient(app.config['MONGO_URI'])
-        db = mongodb_client.get_database()
-        db.command('ping')
-        app.db = db
-        logger.info("Successfully connected to MongoDB!")
-    except Exception as e:
-        logger.error(f"Failed to connect to MongoDB: {e}")
-        raise
+    setup_mongodb(app)
 
     # Initialize Mail
     mail.init_app(app)
     app.mail = mail
     
-    from backend.app.services.mail_service import EmailService
-    from backend.app.services.auth_service import AuthService
-
     # Initialize Services
+    setup_services(app)
+
+    # Register Blueprints
+    register_blueprints(app)
+
+    # Enable CORS
+    setup_cors(app)
+    
+    # Setup error handlers
+    setup_error_handlers(app)
+
+    return app
+
+def setup_logging(app):
+    """Configure application logging"""
+    # Configure file logging
+    log_file = 'app.log'
+    file_handler = logging.FileHandler(log_file)
+    file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    logger.addHandler(file_handler)
+    
+    # Configure console logging
+    logging.basicConfig(level=logging.INFO)
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    ))
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
+
+def setup_mongodb(app):
+    """Initialize MongoDB connection with retry logic"""
+    global mongodb_client, db
+    
+    for attempt in range(MAX_RETRIES):
+        try:
+            mongodb_client = MongoClient(app.config['MONGO_URI'])
+            db = mongodb_client.get_database()
+            db.command('ping')
+            app.db = db
+            logger.info("Successfully connected to MongoDB!")
+            break
+        except Exception as e:
+            logger.error(f"Failed to connect to MongoDB on attempt {attempt + 1}: {e}")
+            if attempt < MAX_RETRIES - 1:
+                sleep(RETRY_DELAY)
+            else:
+                raise e  # Raise the exception if all attempts fail
+
+def setup_services(app):
+    """Initialize application services"""
+    from app.services.mail_service import EmailService
+    from app.services.auth_service import AuthService
+
     email_service = EmailService(app.mail, app.config['FRONTEND_URL'])
     auth_service = AuthService(app.db, email_service)
     app.auth_service = auth_service
 
-    # Register Blueprints
+def register_blueprints(app):
+    """Register all application blueprints"""
     from app.routes.auth_routes import auth_bp
     from app.routes.dashboard_routes import dashboard_bp
     from app.routes.avatar_upload import avatar_bp
-    from backend.app.routes.staff_routes import staff_bp 
+    from app.routes.staff_routes import staff_bp 
     from app.routes.student_routes import student_bp
     from app.routes.timetable_routes import timetable_bp
     from app.routes.initial_req_routes import initial_req_bp
@@ -76,24 +139,29 @@ def create_app():
     from app.routes.subject_assignment_routes import subject_assign_bp
     from app.routes.timeslots_routes import timeslots_bp
 
-    app.register_blueprint(auth_bp, url_prefix='/api/auth')
-    app.register_blueprint(fake_user_bp, url_prefix='/api/fake_user')
-    app.register_blueprint(dashboard_bp, url_prefix='/api/dashboard')
-    app.register_blueprint(avatar_bp, url_prefix='/api')
-    app.register_blueprint(staff_bp, url_prefix='/api/staffs')
-    app.register_blueprint(student_bp, url_prefix='/api/students')
-    app.register_blueprint(timetable_bp, url_prefix='/api/timetable')
-    app.register_blueprint(initial_req_bp, url_prefix='/api/initial_req')
-    app.register_blueprint(class_bp, url_prefix='/api/classes')
-    app.register_blueprint(subjects_bp, url_prefix='/api/subjects')
-    app.register_blueprint(subject_gen_bp, url_prefix='/api/subject-gen') 
-    app.register_blueprint(stream_config_bp, url_prefix='/api/stream-config')
-    app.register_blueprint(constants_bp, url_prefix='/api/constants')
-    app.register_blueprint(subject_assign_bp, url_prefix='/api/subject-assign')
-    app.register_blueprint(timeslots_bp, url_prefix='/api/timeslots')
-     
+    blueprints = [
+        (auth_bp, '/api/auth'),
+        (fake_user_bp, '/api/fake_user'),
+        (dashboard_bp, '/api/dashboard'),
+        (avatar_bp, '/api'),
+        (staff_bp, '/api/staffs'),
+        (student_bp, '/api/students'),
+        (timetable_bp, '/api/timetable'),
+        (initial_req_bp, '/api/initial_req'),
+        (class_bp, '/api/classes'),
+        (subjects_bp, '/api/subjects'),
+        (subject_gen_bp, '/api/subject-gen'),
+        (stream_config_bp, '/api/stream-config'),
+        (constants_bp, '/api/constants'),
+        (subject_assign_bp, '/api/subject-assign'),
+        (timeslots_bp, '/api/timeslots')
+    ]
+    
+    for blueprint, url_prefix in blueprints:
+        app.register_blueprint(blueprint, url_prefix=url_prefix)
 
-    # Enable CORS
+def setup_cors(app):
+    """Configure CORS for the application"""
     CORS(app, resources={
         r"/api/*": {
             "origins": [app.config['FRONTEND_URL']],
@@ -103,47 +171,12 @@ def create_app():
             "max_age": 600  # Cache preflight requests for 10 minutes
         }
     })
-    
-     
+
+def setup_error_handlers(app):
+    """Register application error handlers"""
     @app.errorhandler(401)
     def unauthorized_handler(e):
         return {
             "error": "Unauthorized",
             "message": str(e.description)
         }, 401
-    
-
-    return app
-
-
-
-# Configure rate limiting
-    # limiter = Limiter(
-    #     app=app,
-    #     key_func=get_remote_address,
-    #     default_limits=["200 per day", "50 per hour"]
-    # )
-    
-    # Apply specific rate limits to auth endpoints
-    # @limiter.limit("5 per minute")
-    # @app.route("/api/auth/login", methods=["POST"])
-    # def login_limit():
-    #     pass
-    # Apply rate limit to login route
-    # @limiter.limit("5 per minute")
-    # @app.route("/api/auth/login", methods=["POST"])
-    # def login_limit():
-    #     return login()  # Call the actual login function
-    
-    # @limiter.limit("3 per minute")
-    # @app.route("/api/auth/refresh", methods=["POST"])
-    # def refresh_limit():
-    #     pass
-    
-    # Register error handlers
-    # @app.errorhandler(429)
-    # def ratelimit_handler(e):
-    #     return {
-    #         "error": "Too many requests",
-    #         "message": str(e.description)
-    #     }, 429

@@ -11,9 +11,11 @@ node_modules/
 dist/
 dist-ssr/
 *.local
+frontend/.env
 
 ## Python (Backend)
-backend/.env
+backend/.env.development
+backend/.env.production
 backend/venv/
 backend/__pycache__/
 *.pyc

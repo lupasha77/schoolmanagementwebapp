@@ -4,7 +4,7 @@ import logging
 from app.validation.validators import required_fields, validate_password, validate_email 
 from app.middleware.auth_middleware import token_required
 import os
-from config.config import Config
+from backend.config.DevConfig import Config
 
 logger = logging.getLogger(__name__)
 auth_bp = Blueprint('auth', __name__)
