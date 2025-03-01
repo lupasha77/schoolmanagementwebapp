@@ -1,5 +1,5 @@
 import { Button, Group, Paper, SimpleGrid, Text, Textarea, TextInput } from '@mantine/core';
-import bg from './bg.svg';
+// import bg from './bg.svg';
 import { ContactIconsList } from './ContactIcons';
 import classes from './GetInTouch.module.css';
 
@@ -7,7 +7,9 @@ export function GetInTouch() {
   return (
     <Paper shadow="md" radius="lg">
       <div className={classes.wrapper}>
-        <div className={classes.contacts} style={{ backgroundImage: `url(${bg.src})` }}>
+        <div className={classes.contacts} 
+        // style={{ backgroundImage: `url(${bg.src})` }}
+        >
           <Text fz="lg" fw={700} className={classes.title} c="#fff">
             Contact information
           </Text>

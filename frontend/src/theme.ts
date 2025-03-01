@@ -1,11 +1,20 @@
-import { MantineThemeOverride } from '@mantine/core';
+import { MantineTheme } from '@mantine/core';
 
-export const theme: MantineThemeOverride = {
+interface CustomMantineTheme extends Partial<MantineTheme> {
+  colorScheme: 'light' | 'dark';
+  globalStyles: (theme: CustomMantineTheme) => {
+    body: {
+      backgroundColor: string;
+    };
+  };
+}
+
+export const theme: CustomMantineTheme = {
   colorScheme: 'light',
   primaryColor: 'blue',
   globalStyles: (theme) => ({
     body: {
-      backgroundColor: theme.colors.gray[0],
+      backgroundColor: theme.colors?.gray[0] ?? '#ffffff',
     },
   }),
 };

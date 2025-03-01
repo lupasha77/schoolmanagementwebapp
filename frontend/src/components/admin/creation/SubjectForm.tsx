@@ -8,7 +8,7 @@ const fetchSubjectNames = async () => {
   try {
     const response = await schoolApis.getSubjectNames();
     // console.log("Available Subject Names:", response.subjects);
-    return response.subjects || []; // Return an empty array if no subjectNames;
+    return response.subjects.map(subject => subject.name);
   } catch (error) {
     console.error("Error fetching subject names:", error);
     return [];
@@ -19,7 +19,7 @@ const fetchDepartmentName = async () => {
   try {
     const response = await schoolApis.getDepartmentName();
     // console.log("Available Department Names:", response.department);
-    return response.department || []; // Return an empty array if no department names;
+    return response.departments || []; // Return an empty array if no department names;
   } catch (error) {
     console.error("Error fetching department names:", error);
     return [];
@@ -60,6 +60,8 @@ export function SubjectForm() {
         specialty: ["Form 5", "Form 6"].includes(formData.gradeLevel)
           ? (formData.specialty as Specialty)
           : undefined,
+          isCore: false, // or true, depending on your requirements
+          isPractical: formData.requiresPracticals,
       };
   
       // Log payload before sending to the API
